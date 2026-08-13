@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      PORT: ${PORT:-8080}
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        API_BASE_URL: ""
+    environment:
+      PORT: ${PORT:-8080}
+      BACKEND_PROTO: http
+      BACKEND_HOST: backend:${PORT:-8080}
+    depends_on:
+      - backend
+    ports:
+      - "${PORT:-8080}:${PORT:-8080}"

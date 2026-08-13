@@ -1,0 +1,47 @@
+map $http_accept $spa_request {
+    default 0;
+    "~*text/html" 1;
+}
+
+server {
+    listen ${PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Render serves the backend behind Cloudflare; without SNI the TLS handshake
+    # is rejected (SSL alert 40), so send the upstream hostname explicitly.
+    proxy_ssl_server_name on;
+    # Cloudflare routes by Host header too, so proxied requests must present the
+    # backend hostname, not the frontend's $host.
+    proxy_set_header Host ${BACKEND_HOST};
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Public API
+    location = /event-types { proxy_pass ${BACKEND_PROTO}://${BACKEND_HOST}; }
+    location = /slots { proxy_pass ${BACKEND_PROTO}://${BACKEND_HOST}; }
+    location = /bookings { proxy_pass ${BACKEND_PROTO}://${BACKEND_HOST}; }
+
+    # Admin API (no SPA route collision)
+    location = /admin/slots { proxy_pass ${BACKEND_PROTO}://${BACKEND_HOST}; }
+    location ~ ^/admin/event-types/[^/]+$ { proxy_pass ${BACKEND_PROTO}://${BACKEND_HOST}; }
+    location ~ ^/admin/bookings/[^/]+/cancel$ { proxy_pass ${BACKEND_PROTO}://${BACKEND_HOST}; }
+
+    # Admin API paths that are also SPA routes — browser navigation (Accept: text/html)
+    # gets the SPA shell, JSON API calls (fetch) are proxied to the backend.
+    location ~ ^/admin/(event-types|schedules|bookings)$ {
+        if ($spa_request = 1) {
+            rewrite ^ /index.html last;
+        }
+        proxy_pass ${BACKEND_PROTO}://${BACKEND_HOST};
+    }
+
+    # Static assets (hashed filenames)
+    location /assets/ { try_files $uri =404; }
+
+    # SPA fallback (history routing: /, /admin, /admin/settings, deep links)
+    location / { try_files $uri $uri/ /index.html; }
+}

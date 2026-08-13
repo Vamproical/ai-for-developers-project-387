@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/target
+**/dist
+tsp-output
+playwright-report
+test-results
+frontend/.env
+backend/.mvn/wrapper/dists
+*.jar
+.DS_Store

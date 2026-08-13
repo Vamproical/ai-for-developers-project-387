@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: booking-calendar-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: free
+
+  - type: web
+    name: booking-calendar-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: BACKEND_PROTO
+        value: https
+      # Literal public hostname: `fromService.property: host` returns the internal
+      # hostname (e.g. booking-calendar-backend-1fht) which free-tier services can't
+      # resolve. Update this if the backend service is ever deleted and recreated.
+      - key: BACKEND_HOST
+        value: booking-calendar-backend-1fht.onrender.com
