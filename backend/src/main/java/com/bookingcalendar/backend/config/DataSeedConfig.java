@@ -17,6 +17,7 @@ public class DataSeedConfig {
             if (repository.count() == 0) {
                 repository.save(new EventTypeEntity("30-min Consultation", "A quick 30-minute consultation call", 30));
                 repository.save(new EventTypeEntity("1-hour Workshop", "An in-depth 1-hour workshop session", 60));
+                repository.save(new EventTypeEntity("Quick call", "A quick 5-minute call", 5));
             }
         };
     }
